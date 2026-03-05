@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Performance Spinz Poker</title>
+<title>Performance Spinz Pedro</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 body{font-family:Arial, sans-serif;background:#0f172a;color:white;margin:0;padding:20px}
@@ -14,10 +14,14 @@ button{background:#22c55e;border:none;padding:10px 15px;border-radius:12px;color
 button:hover{opacity:0.9}
 .label{margin-top:10px;font-size:14px}
 .score{font-size:22px;font-weight:bold;text-align:center;margin-top:10px}
+.topbar{background:#111827;padding:15px;border-radius:20px;margin-bottom:20px;text-align:center;font-size:14px}
+.highlight{font-weight:bold;color:#22c55e}
 </style>
 </head>
 <body>
-<h1>♠️ Performance Spinz</h1>
+<h1>♠️ Performance Spinz Pedro</h1>
+
+<div class="topbar" id="liveStats"></div>
 
 <div class="card">
 <h2>Nova Sessão</h2>
@@ -37,10 +41,16 @@ button:hover{opacity:0.9}
 <input type="number" id="mesas">
 
 <div class="label">Mexi no telefone?</div>
-<select id="telefone">
-<option value="0">Não</option>
-<option value="1">Sim</option>
-</select>
+<select id="telefone"><option value="0">Não</option><option value="1">Sim</option></select>
+
+<div class="label">Distrai-me?</div>
+<select id="distracao"><option value="0">Não</option><option value="1">Sim</option></select>
+
+<div class="label">Pensei noutras coisas?</div>
+<select id="pensamentos"><option value="0">Não</option><option value="1">Sim</option></select>
+
+<div class="label">Cumpri o tempo definido?</div>
+<select id="tempoCumprido"><option value="1">Sim</option><option value="0">Não</option></select>
 
 <div class="label">Nível de Cansaço (0-10)</div>
 <input type="range" min="0" max="10" id="cansaco" value="0">
@@ -48,66 +58,92 @@ button:hover{opacity:0.9}
 <div class="label">Nível de Foco (0-10)</div>
 <input type="range" min="0" max="10" id="foco" value="5">
 
-<div class="label">Distrai-me?</div>
-<select id="distracao">
-<option value="0">Não</option>
-<option value="1">Sim</option>
-</select>
+<div class="label">Existiu Tilt? (0-10)</div>
+<input type="range" min="0" max="10" id="tilt" value="0">
 
-<div class="label">Pensei noutras coisas?</div>
-<select id="pensamentos">
-<option value="0">Não</option>
-<option value="1">Sim</option>
-</select>
+<div class="label">Como senti que runnei? (0-10)</div>
+<input type="range" min="0" max="10" id="run" value="5">
+
+<div class="label">Facilidade em sair das linhas normais (0-10)</div>
+<input type="range" min="0" max="10" id="criatividade" value="5">
 
 <button onclick="guardarSessao()">Guardar Sessão</button>
 <div class="score" id="scoreDisplay"></div>
 </div>
 
 <div class="card">
-<h2>Estatísticas</h2>
+<h2>Evolução de Performance</h2>
 <canvas id="grafico"></canvas>
 </div>
 
 <script>
 let sessoes = JSON.parse(localStorage.getItem("sessoes")) || [];
+let chart;
 
-function calcularScore(foco,cansaco,telefone,distracao,pensamentos){
-return (foco*2) - cansaco - (telefone*2) - (distracao*2) - (pensamentos*2);
+function calcularScore(foco,cansaco,telefone,distracao,pensamentos,tilt,tempoCumprido){
+return (foco*2) - cansaco - (telefone*2) - (distracao*2) - (pensamentos*2) - (tilt*1.5) + (tempoCumprido*2);
 }
 
 function guardarSessao(){
 let data = document.getElementById("data").value;
 let sessaoDia = document.getElementById("sessaoDia").value;
-let duracao = document.getElementById("duracao").value;
-let jogos = document.getElementById("jogos").value;
+let duracao = parseInt(document.getElementById("duracao").value || 0);
+let jogos = parseInt(document.getElementById("jogos").value || 0);
 let mesas = document.getElementById("mesas").value;
 let telefone = parseInt(document.getElementById("telefone").value);
-let cansaco = parseInt(document.getElementById("cansaco").value);
-let foco = parseInt(document.getElementById("foco").value);
 let distracao = parseInt(document.getElementById("distracao").value);
 let pensamentos = parseInt(document.getElementById("pensamentos").value);
+let tempoCumprido = parseInt(document.getElementById("tempoCumprido").value);
+let cansaco = parseInt(document.getElementById("cansaco").value);
+let foco = parseInt(document.getElementById("foco").value);
+let tilt = parseInt(document.getElementById("tilt").value);
+let run = parseInt(document.getElementById("run").value);
+let criatividade = parseInt(document.getElementById("criatividade").value);
 
-let score = calcularScore(foco,cansaco,telefone,distracao,pensamentos);
+let score = calcularScore(foco,cansaco,telefone,distracao,pensamentos,tilt,tempoCumprido);
 
-let nova = {data,sessaoDia,duracao,jogos,mesas,telefone,cansaco,foco,distracao,pensamentos,score};
+let nova = {data,sessaoDia,duracao,jogos,mesas,telefone,distracao,pensamentos,tempoCumprido,cansaco,foco,tilt,run,criatividade,score};
 sessoes.push(nova);
 localStorage.setItem("sessoes",JSON.stringify(sessoes));
 
-document.getElementById("scoreDisplay").innerText = "Score da Sessão: " + score;
+document.getElementById("scoreDisplay").innerText = "Score da Sessão: " + score.toFixed(1);
 
 atualizarGrafico();
+atualizarBarra();
 }
 
 function atualizarGrafico(){
 let ctx = document.getElementById('grafico').getContext('2d');
-let labels = sessoes.map((s,i)=>"Sessão " + (i+1));
-let scores = sessoes.map(s=>s.score);
+if(chart) chart.destroy();
+chart = new Chart(ctx,{type:'line',data:{labels:sessoes.map((s,i)=>"Sessão "+(i+1)),datasets:[{label:'Score',data:sessoes.map(s=>s.score)}]},options:{responsive:true}});
+}
 
-new Chart(ctx,{type:'line',data:{labels:labels,datasets:[{label:'Score',data:scores}]},options:{responsive:true}});
+function atualizarBarra(){
+let now = new Date();
+let mesAtual = now.getMonth();
+let anoAtual = now.getFullYear();
+
+let sessoesMes = sessoes.filter(s=>{
+let d = new Date(s.data);
+return d.getMonth()===mesAtual && d.getFullYear()===anoAtual;
+});
+
+let totalMin = sessoesMes.reduce((acc,s)=>acc+s.duracao,0);
+let totalJogos = sessoesMes.reduce((acc,s)=>acc+s.jogos,0);
+let mediaScore = sessoesMes.length>0 ? (sessoesMes.reduce((acc,s)=>acc+s.score,0)/sessoesMes.length).toFixed(1) : 0;
+
+let dias = Math.floor(totalMin/1440);
+let horas = Math.floor((totalMin%1440)/60);
+let minutos = totalMin%60;
+
+let texto = `Tempo jogado este mês: <span class='highlight'>${dias}d ${horas}h ${minutos}m</span> | Jogos: <span class='highlight'>${totalJogos}</span> | Média Performance: <span class='highlight'>${mediaScore}</span>`;
+
+
+document.getElementById("liveStats").innerHTML = texto;
 }
 
 atualizarGrafico();
+atualizarBarra();
 </script>
 </body>
 </html>
