@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Performance Spinz Poker</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+body{font-family:Arial, sans-serif;background:#0f172a;color:white;margin:0;padding:20px}
+h1{text-align:center}
+.card{background:#1e293b;padding:20px;border-radius:20px;margin-bottom:20px;box-shadow:0 10px 25px rgba(0,0,0,0.3)}
+input,select{width:100%;padding:8px;margin:5px 0;border-radius:10px;border:none}
+button{background:#22c55e;border:none;padding:10px 15px;border-radius:12px;color:black;font-weight:bold;cursor:pointer;width:100%;margin-top:10px}
+button:hover{opacity:0.9}
+.label{margin-top:10px;font-size:14px}
+.score{font-size:22px;font-weight:bold;text-align:center;margin-top:10px}
+</style>
+</head>
+<body>
+<h1>♠️ Performance Spinz</h1>
+
+<div class="card">
+<h2>Nova Sessão</h2>
+<label>Data</label>
+<input type="date" id="data">
+
+<label>Nº Sessão no Dia</label>
+<input type="number" id="sessaoDia">
+
+<label>Duração (minutos)</label>
+<input type="number" id="duracao">
+
+<label>Nº Jogos</label>
+<input type="number" id="jogos">
+
+<label>Mesas Simultâneas</label>
+<input type="number" id="mesas">
+
+<div class="label">Mexi no telefone?</div>
+<select id="telefone">
+<option value="0">Não</option>
+<option value="1">Sim</option>
+</select>
+
+<div class="label">Nível de Cansaço (0-10)</div>
+<input type="range" min="0" max="10" id="cansaco" value="0">
+
+<div class="label">Nível de Foco (0-10)</div>
+<input type="range" min="0" max="10" id="foco" value="5">
+
+<div class="label">Distrai-me?</div>
+<select id="distracao">
+<option value="0">Não</option>
+<option value="1">Sim</option>
+</select>
+
+<div class="label">Pensei noutras coisas?</div>
+<select id="pensamentos">
+<option value="0">Não</option>
+<option value="1">Sim</option>
+</select>
+
+<button onclick="guardarSessao()">Guardar Sessão</button>
+<div class="score" id="scoreDisplay"></div>
+</div>
+
+<div class="card">
+<h2>Estatísticas</h2>
+<canvas id="grafico"></canvas>
+</div>
+
+<script>
+let sessoes = JSON.parse(localStorage.getItem("sessoes")) || [];
+
+function calcularScore(foco,cansaco,telefone,distracao,pensamentos){
+return (foco*2) - cansaco - (telefone*2) - (distracao*2) - (pensamentos*2);
+}
+
+function guardarSessao(){
+let data = document.getElementById("data").value;
+let sessaoDia = document.getElementById("sessaoDia").value;
+let duracao = document.getElementById("duracao").value;
+let jogos = document.getElementById("jogos").value;
+let mesas = document.getElementById("mesas").value;
+let telefone = parseInt(document.getElementById("telefone").value);
+let cansaco = parseInt(document.getElementById("cansaco").value);
+let foco = parseInt(document.getElementById("foco").value);
+let distracao = parseInt(document.getElementById("distracao").value);
+let pensamentos = parseInt(document.getElementById("pensamentos").value);
+
+let score = calcularScore(foco,cansaco,telefone,distracao,pensamentos);
+
+let nova = {data,sessaoDia,duracao,jogos,mesas,telefone,cansaco,foco,distracao,pensamentos,score};
+sessoes.push(nova);
+localStorage.setItem("sessoes",JSON.stringify(sessoes));
+
+document.getElementById("scoreDisplay").innerText = "Score da Sessão: " + score;
+
+atualizarGrafico();
+}
+
+function atualizarGrafico(){
+let ctx = document.getElementById('grafico').getContext('2d');
+let labels = sessoes.map((s,i)=>"Sessão " + (i+1));
+let scores = sessoes.map(s=>s.score);
+
+new Chart(ctx,{type:'line',data:{labels:labels,datasets:[{label:'Score',data:scores}]},options:{responsive:true}});
+}
+
+atualizarGrafico();
+</script>
+</body>
+</html>
