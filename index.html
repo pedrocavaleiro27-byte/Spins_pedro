@@ -12,10 +12,12 @@ h1{text-align:center}
 input,select{width:100%;padding:8px;margin:5px 0;border-radius:10px;border:none}
 button{background:#22c55e;border:none;padding:10px 15px;border-radius:12px;color:black;font-weight:bold;cursor:pointer;width:100%;margin-top:10px}
 button:hover{opacity:0.9}
-.label{margin-top:10px;font-size:14px}
+.label{margin-top:15px;font-size:14px}
 .score{font-size:22px;font-weight:bold;text-align:center;margin-top:10px}
 .topbar{background:#111827;padding:15px;border-radius:20px;margin-bottom:20px;text-align:center;font-size:14px}
 .highlight{font-weight:bold;color:#22c55e}
+.range-container{margin-bottom:10px}
+.range-value{font-weight:bold;color:#22c55e;margin-left:10px}
 </style>
 </head>
 <body>
@@ -52,20 +54,30 @@ button:hover{opacity:0.9}
 <div class="label">Cumpri o tempo definido?</div>
 <select id="tempoCumprido"><option value="1">Sim</option><option value="0">Não</option></select>
 
-<div class="label">Nível de Cansaço (0-10)</div>
-<input type="range" min="0" max="10" id="cansaco" value="0">
+<div class="range-container">
+<div class="label">Nível de Cansaço (0-10) <span class="range-value" id="cansacoVal">0</span></div>
+<input type="range" min="0" max="10" id="cansaco" value="0" oninput="updateValue('cansaco')">
+</div>
 
-<div class="label">Nível de Foco (0-10)</div>
-<input type="range" min="0" max="10" id="foco" value="5">
+<div class="range-container">
+<div class="label">Nível de Foco (0-10) <span class="range-value" id="focoVal">5</span></div>
+<input type="range" min="0" max="10" id="foco" value="5" oninput="updateValue('foco')">
+</div>
 
-<div class="label">Existiu Tilt? (0-10)</div>
-<input type="range" min="0" max="10" id="tilt" value="0">
+<div class="range-container">
+<div class="label">Existiu Tilt? (0-10) <span class="range-value" id="tiltVal">0</span></div>
+<input type="range" min="0" max="10" id="tilt" value="0" oninput="updateValue('tilt')">
+</div>
 
-<div class="label">Como senti que runnei? (0-10)</div>
-<input type="range" min="0" max="10" id="run" value="5">
+<div class="range-container">
+<div class="label">Como senti que runnei? (0-10) <span class="range-value" id="runVal">5</span></div>
+<input type="range" min="0" max="10" id="run" value="5" oninput="updateValue('run')">
+</div>
 
-<div class="label">Facilidade em sair das linhas normais (0-10)</div>
-<input type="range" min="0" max="10" id="criatividade" value="5">
+<div class="range-container">
+<div class="label">Facilidade em sair das linhas normais (0-10) <span class="range-value" id="criatividadeVal">5</span></div>
+<input type="range" min="0" max="10" id="criatividade" value="5" oninput="updateValue('criatividade')">
+</div>
 
 <button onclick="guardarSessao()">Guardar Sessão</button>
 <div class="score" id="scoreDisplay"></div>
@@ -79,6 +91,10 @@ button:hover{opacity:0.9}
 <script>
 let sessoes = JSON.parse(localStorage.getItem("sessoes")) || [];
 let chart;
+
+function updateValue(id){
+document.getElementById(id+"Val").innerText = document.getElementById(id).value;
+}
 
 function calcularScore(foco,cansaco,telefone,distracao,pensamentos,tilt,tempoCumprido){
 return (foco*2) - cansaco - (telefone*2) - (distracao*2) - (pensamentos*2) - (tilt*1.5) + (tempoCumprido*2);
@@ -137,7 +153,6 @@ let horas = Math.floor((totalMin%1440)/60);
 let minutos = totalMin%60;
 
 let texto = `Tempo jogado este mês: <span class='highlight'>${dias}d ${horas}h ${minutos}m</span> | Jogos: <span class='highlight'>${totalJogos}</span> | Média Performance: <span class='highlight'>${mediaScore}</span>`;
-
 
 document.getElementById("liveStats").innerHTML = texto;
 }
